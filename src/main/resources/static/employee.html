@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>University • Employee Admin</title>
+    <style>
+        :root{
+          --bg:#0f172a;          /* slate-900 */
+          --panel:#111827;       /* gray-900 */
+          --muted:#334155;       /* slate-600 */
+          --text:#e5e7eb;        /* gray-200 */
+          --accent:#22d3ee;      /* cyan-400 */
+          --accent-2:#06b6d4;    /* cyan-500 */
+          --danger:#ef4444;      /* red-500 */
+          --success:#10b981;     /* emerald-500 */
+          --border:rgba(148,163,184,.25);
+          --radius:16px;
+          --shadow:0 10px 30px rgba(0,0,0,.35);
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%}
+        body{
+          margin:0; font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+          background: radial-gradient(1200px 800px at 80% -20%, rgba(34,211,238,.15), transparent 60%),
+                      radial-gradient(800px 600px at -10% 110%, rgba(6,182,212,.15), transparent 60%),
+                      var(--bg);
+          color:var(--text);
+        }
+        .container{max-width:1100px;margin:48px auto;padding:0 20px}
+        header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+        .brand{display:flex;gap:12px;align-items:center}
+        .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:var(--shadow)}
+        h1{font-size:22px;margin:0;font-weight:700;letter-spacing:.3px}
+        .card{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+        .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+        @media (max-width:900px){.grid{grid-template-columns:1fr}}
+        .form{padding:20px}
+        .form h2{margin:0 0 14px;font-size:18px}
+        label{display:block;font-size:13px;color:#cbd5e1;margin-bottom:6px}
+        input, textarea{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:#0b1220;color:var(--text);outline:none}
+        textarea{min-height:90px;resize:vertical}
+        .actions{display:flex;gap:10px;margin-top:14px}
+        button{border:0;border-radius:12px;padding:12px 16px;font-weight:600;color:#0b1220;background:var(--accent);cursor:pointer;transition:transform .05s ease, filter .2s ease}
+        button:hover{filter:brightness(1.05)}
+        button:active{transform:translateY(1px)}
+        .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+        .table-wrap{padding:16px 16px 4px}
+        table{width:100%;border-collapse:separate;border-spacing:0 10px}
+        thead th{font-size:12px;font-weight:700;color:#a8b3cf;text-align:left;padding:0 12px}
+        tbody tr{background:#0b1220;border:1px solid var(--border);}
+        tbody td{padding:12px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+        tbody tr:first-child td{border-top-left-radius:12px;border-top-right-radius:12px}
+        tbody tr:last-child td{border-bottom-left-radius:12px;border-bottom-right-radius:12px}
+        .badge{display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;border:1px solid var(--border);color:#cbd5e1}
+        .row-actions{display:flex;gap:8px}
+        .btn-danger{background:var(--danger);color:white}
+        .btn-secondary{background:#1f2937;color:#e5e7eb;border:1px solid var(--border)}
+        footer{margin-top:28px;opacity:.75;font-size:12px}
+        .toast{position:fixed;top:16px;right:16px;background:#0b1220;border:1px solid var(--border);padding:12px 14px;border-radius:12px;box-shadow:var(--shadow);display:none}
+        dialog{border:1px solid var(--border);border-radius:16px;background:#0b1220;color:var(--text);padding:0;box-shadow:var(--shadow)}
+        dialog .dialog-body{padding:18px}
+        dialog::backdrop{background:rgba(0,0,0,.55)}
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="brand">
+            <div class="logo" aria-hidden="true"></div>
+            <div>
+                <h1>Northern University — Employee Admin</h1>
+                <div style="font-size:12px;color:#a8b3cf">Simple, professional frontend integrated with your Spring Boot API</div>
+            </div>
+        </div>
+        <div>
+            <button class="btn-outline" onclick="refreshList()" title="Refresh list">Refresh</button>
+        </div>
+    </header>
+
+    <div class="grid">
+        <!-- Create / Edit Form -->
+        <section class="card form">
+            <h2 id="formTitle">Create Employee</h2>
+            <form id="empForm" onsubmit="submitEmployee(event)">
+                <input type="hidden" id="empId" />
+
+                <div style="margin-bottom:12px">
+                    <label for="name">Name</label>
+                    <input id="name" name="name" placeholder="e.g. John Doe" required />
+                </div>
+
+                <div style="margin-bottom:12px">
+                    <label for="address">Address</label>
+                    <textarea id="address" name="address" placeholder="e.g. Dhaka"></textarea>
+                </div>
+
+                <div class="actions">
+                    <button type="submit">Save</button>
+                    <button type="button" class="btn-secondary" onclick="resetForm()">Reset</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Table -->
+        <section class="card table-wrap">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 4px 10px 4px">
+                <div style="font-weight:700">Employees</div>
+                <div class="badge" id="apiStatus">API: Unknown</div>
+            </div>
+            <table>
+                <thead>
+                <tr>
+                    <th style="width:80px">ID</th>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th style="width:160px">Actions</th>
+                </tr>
+                </thead>
+                <tbody id="empTbody"></tbody>
+            </table>
+        </section>
+    </div>
+
+    <footer>
+        Note: This UI calls <code>POST /emp_create</code> for create. Listing/Update/Delete expect
+        <code>GET /employees</code>, <code>PUT /employees/{id}</code>, <code>DELETE /employees/{id}</code>.
+        If those aren't implemented yet, Create will work and others will gracefully show an error.
+    </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Edit Modal (uses native <dialog>) -->
+<dialog id="editDialog">
+    <form method="dialog">
+        <div class="dialog-body">
+            <h3 style="margin:0 0 10px">Edit Employee</h3>
+            <input type="hidden" id="editId" />
+            <div style="margin-bottom:12px">
+                <label for="editName">Name</label>
+                <input id="editName" required />
+            </div>
+            <div style="margin-bottom:12px">
+                <label for="editAddress">Address</label>
+                <textarea id="editAddress"></textarea>
+            </div>
+            <div class="actions">
+                <button type="submit" onclick="applyEdit(event)">Update</button>
+                <button class="btn-secondary" onclick="document.getElementById('editDialog').close()">Cancel</button>
+            </div>
+        </div>
+    </form>
+</dialog>
+
+<script>
+    const API = {
+      create: "/emp_create",              // POST
+      list: "/employees",                 // GET (implement in backend)
+      update: (id) => `/employees/${id}`,   // PUT (implement)
+      remove: (id) => `/employees/${id}`,   // DELETE (implement)
+    };
+
+    function toast(msg, ok=true){
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.style.borderColor = ok ? 'rgba(16,185,129,.4)' : 'rgba(239,68,68,.45)';
+      el.style.display = 'block';
+      setTimeout(()=>{ el.style.display = 'none'; }, 2600);
+    }
+
+    function setApiStatus(text){
+      const el = document.getElementById('apiStatus');
+      el.textContent = text;
+    }
+
+    function resetForm(){
+      document.getElementById('empForm').reset();
+      document.getElementById('empId').value = '';
+      document.getElementById('formTitle').textContent = 'Create Employee';
+    }
+
+    async function submitEmployee(e){
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById('name').value.trim(),
+        address: document.getElementById('address').value.trim(),
+      };
+
+      try{
+        const res = await fetch(API.create, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if(!res.ok){
+          const txt = await res.text();
+          throw new Error(txt || `Create failed: ${res.status}`);
+        }
+        const data = await res.json();
+        toast('Employee created ✔');
+        setApiStatus('API: Create OK');
+        resetForm();
+        // Optimistically add to table
+        addOrUpdateRow(data);
+      }catch(err){
+        console.error(err);
+        toast(err.message || 'Create failed', false);
+        setApiStatus('API: Create error');
+      }
+    }
+
+    function addOrUpdateRow(emp){
+      const tbody = document.getElementById('empTbody');
+      let row = document.querySelector(`tr[data-id="${emp.id}"]`);
+      if(!row){
+        row = document.createElement('tr');
+        row.setAttribute('data-id', emp.id);
+        row.innerHTML = `
+          <td>${emp.id ?? ''}</td>
+          <td class="cell-name"></td>
+          <td class="cell-address"></td>
+          <td>
+            <div class="row-actions">
+              <button class="btn-outline" onclick="openEdit(${emp.id})">Edit</button>
+              <button class="btn-danger" onclick="deleteEmployee(${emp.id})">Delete</button>
+            </div>
+          </td>`;
+        tbody.prepend(row);
+      }
+      row.querySelector('.cell-name').textContent = emp.name ?? '';
+      row.querySelector('.cell-address').textContent = emp.address ?? '';
+    }
+
+    async function refreshList(){
+      try{
+        const res = await fetch(API.list);
+        if(!res.ok) throw new Error(`List failed: ${res.status}`);
+        const data = await res.json();
+        const tbody = document.getElementById('empTbody');
+        tbody.innerHTML = '';
+        (Array.isArray(data) ? data : []).forEach(addOrUpdateRow);
+        toast('List loaded');
+        setApiStatus('API: List OK');
+      }catch(err){
+        console.warn(err);
+        toast('Could not load list (implement GET /employees)', false);
+        setApiStatus('API: List unavailable');
+      }
+    }
+
+    function openEdit(id){
+      const row = document.querySelector(`tr[data-id="${id}"]`);
+      if(!row){ toast('Row not found', false); return; }
+      document.getElementById('editId').value = id;
+      document.getElementById('editName').value = row.querySelector('.cell-name').textContent;
+      document.getElementById('editAddress').value = row.querySelector('.cell-address').textContent;
+      document.getElementById('editDialog').showModal();
+    }
+
+    async function applyEdit(e){
+      e.preventDefault();
+      const id = document.getElementById('editId').value;
+      const payload = { name: document.getElementById('editName').value.trim(), address: document.getElementById('editAddress').value.trim() };
+      try{
+        const res = await fetch(API.update(id), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if(!res.ok) throw new Error(`Update failed: ${res.status}`);
+        const updated = await res.json();
+        addOrUpdateRow(updated);
+        toast('Employee updated ✔');
+        document.getElementById('editDialog').close();
+      }catch(err){
+        console.warn(err);
+        toast('Implement PUT /employees/{id} in backend', false);
+      }
+    }
+
+    async function deleteEmployee(id){
+      if(!confirm('Delete this employee?')) return;
+      try{
+        const res = await fetch(API.remove(id), { method: 'DELETE' });
+        if(!res.ok) throw new Error(`Delete failed: ${res.status}`);
+        const row = document.querySelector(`tr[data-id="${id}"]`);
+        if(row) row.remove();
+        toast('Employee deleted');
+      }catch(err){
+        console.warn(err);
+        toast('Implement DELETE /employees/{id} in backend', false);
+      }
+    }
+
+    // Auto try load list on first paint
+    refreshList();
+</script>
+</body>
+</html>
